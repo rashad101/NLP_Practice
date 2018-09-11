@@ -56,16 +56,44 @@ def fetch_player_table(wiki_link, team_name):
     data = open((team_name + "_fullteam.csv"), 'w')
     data_writer = csv.writer(data)
     data_writer.writerows(rows)
-    # print(rows)
+    data.close()
+
+def fetch_side_column(wiki_link,team_name):
+    url = requests.get(wiki_link)
+    page_content = BeautifulSoup(url.content, 'html.parser')
+    tables = page_content.find_all('table', {'class': 'infobox vcard'})[0]
+
+    trs = tables.find_all("tr")
+    rows = []
+    title = []
+    info = []
+
+    for tr in trs:
+
+        if tr.find("th"):
+            th_text = tr.find("th").get_text().replace("\n","").strip()
+            title.append(th_text)
+
+            if th_text == "Website":
+                website = tr.find_all("a")[0].attrs["href"].replace("\n","").strip()
+                info.append(website)
+            else:
+                info.append(tr.find("td").get_text().replace("\n","").strip())
+
+    rows.append(title)
+    rows.append(info)
+    data = open((team_name + "_info_table.csv"), 'w')
+    data_writer = csv.writer(data)
+    data_writer.writerows(rows)
     data.close()
 
 
 
 if __name__ == "__main__":
 
+    if (sys.argv):
+        url = sys.argv[1:][0]
+        team_name = url[url.rfind("/") + 1:]
 
-    url = "https://en.wikipedia.org/wiki/FC_Porto"
-    team_name = url[url.rfind("/") + 1:]
-
-    fetch_player_table(url, team_name)
-    #fetch_side_column(url, team_name)
+        fetch_player_table(url, team_name)
+        fetch_side_column(url, team_name)
