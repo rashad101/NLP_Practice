@@ -5,6 +5,7 @@
 import csv
 import sys
 import requests
+import logging
 from bs4 import BeautifulSoup
 
 
@@ -96,32 +97,82 @@ def fetch_side_column(wiki_link,team_name):
     high = ""
     low = ""
     rows = []
-    rows.append(['Current_ranking','Highest_ranking','Lowest_ranking'])
+    header=['Current_ranking','Highest_ranking','Lowest_ranking']
+    infos = []
+    
+    pre_1 = ""
+    pre_1_info = ""
+    pre_2 = ""
+    pre_2_info = ""
+    
+    pre_count=0
     for tr in trs:
         if(current_found and highest_found and lowest_found):
-            break
+            
+            if tr.find("th"):
+                if pre_count==0:
+                    pre_1 = tr.find("th").get_text().replace("\n","").strip()
+                    if tr.find("td"):
+                        pre_1_info = tr.find("td").get_text().replace("\n","").strip()
+                elif pre_count==1:
+                    pre_2 = tr.find("th").get_text().replace("\n","").strip()
+                    if tr.find("td"):
+                        pre_2_info = tr.find("td").get_text().replace("\n","").strip()
+                else:
+                    text = tr.find("th").get_text().replace("\n","").strip()
+                    if text == "Best result":
+                        current_info = tr.find("td").get_text().replace("\n","").strip()
+                        header.append(pre_1)
+                        infos.append("Appearances: "+pre_2_info+"\nBest result: "+current_info)
+                        
+                        pre_1 = pre_2
+                        pre_1_info = pre_2_info
+                        pre_2  = text
+                        pre_2_info = current_info
+                        
+                    else:
+                        pre_1 = pre_2
+                        pre_1_info = pre_2_info
+                        pre_2 = tr.find("th").get_text().replace("\n","").strip()
+                        if tr.find("td"):
+                            pre_2_info = tr.find("td").get_text().replace("\n","").strip()
+                        
+                pre_count+=1
+            
         words = tr.get_text().replace("\n","").strip().split(" ")
         if 'Current' in words[0]:
             current_found=True
             
             if "[" in words[0]:
                 curr = words[0][len('Current'):words[0].find("[")]
+                infos.append(curr)
             else:
                 curr = words[0][len('Current'):]
+                infos.append(curr)
             
         if 'Highest' in words[0]:
             highest_found=True
             if "[" in words[0]:
                 high = words[0][len('Highest'):words[0].find("[")]
+                infos.append(high)
             else:
                 high = words[0][len('Highest'):]
+                infos.append(high)
         if 'Lowest' in words[0]:
             lowest_found=True
             if "[" in words[0]:
                 low = words[0][len('Lowest'):words[0].find("[")]
+                infos.append(low)
             else:
                 low = words[0][len('Lowest'):]
-    rows.append([curr,high,low])           
+                infos.append(low)
+
+    rows.append(header)
+    #deleting ELO rankings
+    del(infos[3])
+    del(infos[3])
+    del(infos[3])
+    rows.append(infos)
     data = open((team_name+"_ranking.csv"),'w')
     data_writer = csv.writer(data)
     data_writer.writerows(rows)
