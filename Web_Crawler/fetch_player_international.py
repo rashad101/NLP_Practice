@@ -5,7 +5,6 @@
 import csv
 import sys
 import requests
-import logging
 from bs4 import BeautifulSoup
 
 
@@ -39,7 +38,7 @@ def fetch_player_table(wiki_link, team_name):
             if found:
                 rows.append(header)
         if found:
-            #the the values from each row
+            #values from each row
             tbodys = table.find_all('tbody')
             for tbody in tbodys:
                 trs = tbody.find_all('tr')
